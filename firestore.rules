@@ -1,0 +1,173 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(eventId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/events/$(eventId)).data.ownerId
+          == request.auth.uid;
+    }
+
+    function isParticipant(eventId) {
+      return signedIn()
+        && exists(
+          /databases/$(database)/documents/events/$(eventId)/participants/$(request.auth.uid)
+        );
+    }
+
+
+    // =========================
+    // USERS
+    // =========================
+
+    match /users/{userId} {
+
+      allow create, read, update:
+        if signedIn()
+        && request.auth.uid == userId;
+
+      allow delete: if false;
+
+
+      match /wishlist/{itemId} {
+
+        allow read: if signedIn();
+
+        allow create, update, delete:
+          if signedIn()
+          && request.auth.uid == userId;
+      }
+    }
+
+
+    // =========================
+    // EVENTS
+    // =========================
+
+    match /events/{eventId} {
+
+      // Kreiranje event
+      allow create:
+        if signedIn()
+        && request.resource.data.ownerId == request.auth.uid;
+
+
+      // Mora da moze da se cita eventot
+      // za korisnik da moze da go najde preku join code
+      allow read:
+        if signedIn();
+
+
+      // Organizer moze da menuva se.
+      //
+      // Obicen korisnik moze da napravi update
+      // samo za da se dodade vo memberIds.
+      allow update:
+        if isOwner(eventId)
+        || (
+          signedIn()
+
+          // Edinstveno pole koe smee da se smeni e memberIds
+          && request.resource.data
+              .diff(resource.data)
+              .affectedKeys()
+              .hasOnly(['memberIds'])
+
+          // memberIds mora da postoi vo noviot dokument
+          && ('memberIds' in request.resource.data)
+
+          // Novata lista mora da go sodrzi korisnikot
+          && request.auth.uid in request.resource.data.memberIds
+
+          // Ako starata lista postoi,
+          // ne smeat da se izbrisat starite clenovi
+          && (
+            !('memberIds' in resource.data)
+            ||
+            request.resource.data.memberIds
+              .hasAll(resource.data.memberIds)
+          )
+        );
+
+
+      // Samo organizer brise event
+      allow delete:
+        if isOwner(eventId);
+
+
+
+      // =========================
+      // PARTICIPANTS
+      // =========================
+
+      match /participants/{participantId} {
+
+        // Najaveni korisnici mozat da ja vidat
+        // listata na clenovi na event
+        allow read:
+          if signedIn();
+
+
+        // Korisnikot moze samo samiot sebe
+        // da go dodade kako participant.
+        allow create:
+          if signedIn()
+          && request.auth.uid == participantId
+          && (
+            (
+              isOwner(eventId)
+              && request.resource.data.role == 'organizer'
+            )
+            ||
+            (
+              !isOwner(eventId)
+              && request.resource.data.role == 'member'
+            )
+          );
+
+
+        // Sopstven participant dokument ili organizer
+        allow update:
+          if signedIn()
+          && (
+            request.auth.uid == participantId
+            || isOwner(eventId)
+          );
+
+
+        // Korisnik moze sam da izleze,
+        // organizer moze da odstrani clen
+        allow delete:
+          if signedIn()
+          && (
+            request.auth.uid == participantId
+            || isOwner(eventId)
+          );
+      }
+
+
+
+      // =========================
+      // SECRET SANTA ASSIGNMENTS
+      // =========================
+
+      match /assignments/{giverId} {
+
+        // Sekoj korisnik go gleda samo svojot rezultat
+        allow read:
+          if signedIn()
+          && request.auth.uid == giverId;
+
+
+        // Samo organizerot moze da napravi draw
+        allow create, update, delete:
+          if isOwner(eventId);
+      }
+    }
+  }
+}
