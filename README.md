@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Secret Santa Service FINKI
 
 Vue.js стартен проект за веб апликација наменета за сите вработени на ФИНКИ.
@@ -10,18 +10,6 @@ Vue.js стартен проект за веб апликација намене
 - Firebase / Firestore
 - Vite
 
-## Како да го стартуваш проектот
-
-```bash
-npm install
-npm run dev
-```
-
-Потоа отвори ја адресата што ќе ја прикаже терминалот, најчесто:
-
-```bash
-http://localhost:5173
-```
 
 ## Firebase
 
@@ -37,4 +25,4 @@ http://localhost:5173
 - `/profile` Профил
 =======
 # Secret-Santa-Service-FINKI
->>>>>>> 2ed88e32336e4ff8a8b771ce92a87de3e0386bf4
+
