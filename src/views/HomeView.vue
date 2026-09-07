@@ -4,7 +4,7 @@
     <section class="hero">
       <div>
         <h1>Secret Santa Service<br />за сите вработени<br />на <span>ФИНКИ</span></h1>
-        <p>Модерна веб апликација за организирање празнични Secret Santa настани, wishlist желби и анонимно извлекување.</p>
+        <p>Модерна веб апликација за организирање празнични Secret Santa настани, желби за подароци и анонимно извлекување.</p>
         <div class="actions">
           <RouterLink to="/register" class="btn btn-primary">Создај профил</RouterLink>
           <RouterLink to="/login" class="btn btn-outline">Најави се</RouterLink>
